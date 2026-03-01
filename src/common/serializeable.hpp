@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <vector>
+#include "network.hpp"
 
 class ISerializeable {
   public:
@@ -24,11 +25,11 @@ std::uint32_t read_uint32(std::istream &is);
 void write_string(std::ostream &os, const std::string &str);
 std::string read_string(std::istream &is);
 
-void send_exact(int socket_fd, const void *data, size_t size);
-void recv_exact(int socket_fd, const void *data, size_t size);
+void send_exact(socket_t socket_fd, const void *data, size_t size);
+void recv_exact(socket_t socket_fd, const void *data, size_t size);
 
-void send_message(int socket_fd, const std::string &payload);
-std::string recv_message(int socket_fd);
+void send_message(socket_t socket_fd, const std::string &payload);
+std::string recv_message(socket_t socket_fd);
 
 template <typename T> void serialize_vector(std::ostream &os, const std::vector<T> &vec) {
 	uint32_t count = static_cast<uint32_t>(vec.size());

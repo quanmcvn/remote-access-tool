@@ -1,4 +1,4 @@
-#include <arpa/inet.h>
+#include "network.hpp"
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
@@ -8,7 +8,7 @@
 
 #include "file_listing.hpp"
 
-#define SERVER_IP "192.168.8.128"
+#define SERVER_IP "192.168.8.130"
 #define SERVER_PORT 12345
 
 class Outside {
@@ -57,12 +57,13 @@ public:
 	}
 	~Outside() {
 		if (this->is_server) {
-			close(client_socket);
+			CLOSESOCKET(client_socket);
 		}
 	}
 };
 
 int main(int argc, char* argv[]) {
+	network_init();
 	std::unique_ptr<Outside> o;
 	if (argc > 1) {
 		if (std::string(argv[1]) == "local") {
@@ -91,6 +92,6 @@ int main(int argc, char* argv[]) {
 		}
 		o->send_output(std::format("{}: not recognized", buffer.c_str()));
 	}
-
+	network_cleanup();
 	return 0;
 }
