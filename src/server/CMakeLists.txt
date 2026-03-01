@@ -9,3 +9,7 @@ target_link_libraries(server
     PRIVATE
         common
 )
+
+if (WIN32)
+    target_link_libraries(server PRIVATE ws2_32)
+endif()

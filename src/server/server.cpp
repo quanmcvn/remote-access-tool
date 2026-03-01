@@ -1,4 +1,4 @@
-#include <arpa/inet.h>
+#include "network.hpp"
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
@@ -8,22 +8,29 @@
 #define PORT 12345
 
 int main() {
-	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (network_init() != 0) {
+		std::cout << "Network init failed\n";
+		return 1;
+	}
+	socket_t server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_socket < 0) {
-		perror("create socket failed");
+		network_perror("create socket failed");
 		return 1;
 	}
 
-	sockaddr_in serverAddr{};
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(12345);
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
+	sockaddr_in server_addr{};
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(12345);
+	server_addr.sin_addr.s_addr = INADDR_ANY;
 
 	int opt = 1;
-	setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-	if (bind(server_socket, (sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
-		perror("bind failed");
+	#ifdef _WIN32
+		setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char*)(&opt), sizeof(opt));
+	#else
+		setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	#endif
+	if (bind(server_socket, (sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+		network_perror("bind failed");
 		return 1;
 	}
 
@@ -68,8 +75,9 @@ int main() {
 		}
 	}
 	
-	close(client_socket);
-	close(server_socket);
+	CLOSESOCKET(client_socket);
+	CLOSESOCKET(server_socket);
 
+	network_cleanup();
 	return 0;
 }

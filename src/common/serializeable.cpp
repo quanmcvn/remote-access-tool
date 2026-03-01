@@ -1,6 +1,6 @@
 #include "serializeable.hpp"
 
-#include <arpa/inet.h>
+#include "network.hpp"
 
 std::uint32_t swap_endian(std::uint32_t value) {
 	return ((value & 0x000000FFu) << 24) | ((value & 0x0000FF00u) << 8) |
@@ -48,7 +48,7 @@ std::string read_string(std::istream &is) {
 		return str;
 	}
 
-void send_exact(int socket_fd, const void *data, size_t size) {
+void send_exact(socket_t socket_fd, const void *data, size_t size) {
 	const char *buffer = static_cast<const char *>(data);
 	size_t total_sent = 0;
 
@@ -63,7 +63,7 @@ void send_exact(int socket_fd, const void *data, size_t size) {
 	}
 }
 
-void recv_exact(int socket_fd, const void* data, size_t size) {
+void recv_exact(socket_t socket_fd, const void* data, size_t size) {
 	void* buffer = const_cast<void*>(data);
 	size_t total_received = 0;
 
@@ -78,7 +78,7 @@ void recv_exact(int socket_fd, const void* data, size_t size) {
 	}
 }
 
-void send_message(int socket_fd, const std::string &payload) {
+void send_message(socket_t socket_fd, const std::string &payload) {
 	uint32_t size = static_cast<uint32_t>(payload.size());
 	uint32_t net_size = swap_endian(size);
 
@@ -87,7 +87,7 @@ void send_message(int socket_fd, const std::string &payload) {
 	send_exact(socket_fd, payload.data(), payload.size());
 }
 
-std::string recv_message(int socket_fd) {
+std::string recv_message(socket_t socket_fd) {
 	uint32_t net_size;
 	recv_exact(socket_fd, &net_size, sizeof(net_size));
 

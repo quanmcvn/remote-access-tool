@@ -12,4 +12,5 @@ target_sources(common
 		FILES
 			serializeable.hpp
 			file_listing.hpp
+			network.hpp
 )
