@@ -53,7 +53,14 @@ int main() {
 			std::istringstream iss(payload, std::ios::binary);
 			std::vector<FileListing> fl = deserialize_vector<FileListing>(iss);
 			for (const auto& f : fl) {
-				std::cout << f.get_file_path() << "\n";
+				std::string type = "[OTHER]";
+				if (f.is_directory()) {
+					type = "[DIR]  ";
+				}
+				if (f.is_regular_file()) {
+					type = "[FILE] ";
+				}
+				std::cout << type << " " << f.get_file_path() << "\n";
 			}
 		} else {
 			std::string message = recv_message(client_socket);
