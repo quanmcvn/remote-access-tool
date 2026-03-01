@@ -58,6 +58,8 @@ static inline void network_perror(const char* msg) {
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
+#include <cstring>
+#include <cstdio>
 
 typedef int socket_t;
 
