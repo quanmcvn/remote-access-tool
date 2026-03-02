@@ -21,5 +21,12 @@ target_link_libraries(client
 )
 
 if (WIN32)
-    target_link_libraries(client PRIVATE ws2_32)
+    target_link_libraries(client 
+        PRIVATE 
+            ws2_32
+            ole32
+            oleaut32
+            wbemuuid
+            shell32
+)
 endif()

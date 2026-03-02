@@ -1,5 +1,7 @@
 #include "error.hpp"
 
+#include <winsock2.h>
+#include <winbase.h>
 #include <iostream>
 #include <format>
 

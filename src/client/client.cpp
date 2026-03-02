@@ -15,8 +15,9 @@
 #define SERVER_PORT 12345
 
 class Outside {
-  private:
-	bool is_server = true;
+private:
+	std::string server_ip;
+	int server_port;
 	int client_socket = 0;
 	sockaddr_in serverAddr;
 
@@ -27,8 +28,8 @@ class Outside {
 			exit(1);
 		}
 		serverAddr.sin_family = AF_INET;
-		serverAddr.sin_port = htons(SERVER_PORT);
-		inet_pton(AF_INET, SERVER_IP, &serverAddr.sin_addr);
+		serverAddr.sin_port = htons(server_port);
+		inet_pton(AF_INET, server_ip.c_str(), &serverAddr.sin_addr);
 
 		if (connect(client_socket, (sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
 			std::cerr << "Connection failed\n";
@@ -37,38 +38,23 @@ class Outside {
 		std::cerr << "init done\n";
 	}
 
-  public:
-	Outside(bool is_server_) : is_server(is_server_) {
-		if (is_server) {
+public:
+	Outside(std::string n_server_ip, int n_server_port) : server_ip(n_server_ip), server_port(n_server_port) {
 			init_non_local();
-		}
 	}
 	std::string get_input() const {
-		if (this->is_server == false) {
-			std::string s;
-			getline(std::cin, s);
-			return s;
-		} else {
-			return recv_message(client_socket);
-		}
+		return recv_message(client_socket);
 	}
 	void send_output(const std::string &message) const {
-		if (this->is_server == false) {
-			std::cout << message << "\n";
-		} else {
-			send_message(client_socket, message);
-		}
+		send_message(client_socket, message);
 	}
 	~Outside() {
-		if (this->is_server) {
-			CLOSESOCKET(client_socket);
-		}
+		CLOSESOCKET(client_socket);
 	}
 };
 
 int main(int argc, char *argv[]) {
 	network_init();
-	std::unique_ptr<Outside> o = std::make_unique<Outside>(true);
 	std::string chosen_ip = SERVER_IP;
 	int chosen_port = SERVER_PORT;
 	for (int i = 1; i < argc; ++i) {
@@ -89,6 +75,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	std::cout << "chosing " << chosen_ip << ":" << chosen_port << "\n";
+	std::unique_ptr<Outside> o = std::make_unique<Outside>(chosen_ip, chosen_port);
 
 	while (true) {
 		std::string buffer = o->get_input();
