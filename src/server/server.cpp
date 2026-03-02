@@ -109,6 +109,14 @@ int main(int argc, char *argv[]) {
 			}
 			continue;
 		}
+		if (s.starts_with("kill")) {
+			std::string payload = recv_message(client_socket);
+			std::istringstream iss(payload, std::ios::binary);
+			int return_code = read_uint32(iss);
+			std::string error_code = read_string(iss);
+			std::cout << "Client returns: " << return_code << " " << error_code << "\n";
+			continue;
+		}
 		std::string message = recv_message(client_socket);
 		std::cout << "Client says: " << message << std::endl;
 	}
