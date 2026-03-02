@@ -1,11 +1,13 @@
 #include "error.hpp"
 
-#include <winsock2.h>
-#include <winbase.h>
 #include <iostream>
 #include <format>
 
 #ifdef _WIN32
+
+#include <winsock2.h>
+#include <winbase.h>
+
 
 int get_last_error() {
 	return WSAGetLastError();
