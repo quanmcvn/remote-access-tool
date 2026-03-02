@@ -12,6 +12,7 @@ private:
 public:
 	FileListing();
 	FileListing(const std::filesystem::directory_entry& path);
+	~FileListing() override;
 	void serialize(std::ostream& os) const override;
 	void deserialize(std::istream& is) override;
 

@@ -45,8 +45,35 @@ std::string read_string(std::istream &is) {
 		throw std::runtime_error("read failed");
 	}
 		
-		return str;
+	return str;
+}
+
+void write_vector_string(std::ostream& os, const std::vector<std::string>& vec) {
+	uint32_t count = static_cast<uint32_t>(vec.size());
+	uint32_t net_count = swap_endian(count);
+
+	os.write(reinterpret_cast<const char*>(&net_count), sizeof(net_count));
+
+	for (const auto &item : vec) {
+		write_string(os, item);
 	}
+}
+
+std::vector<std::string> read_vector_string(std::istream& is) {
+	uint32_t net_count;
+	is.read(reinterpret_cast<char*>(&net_count), sizeof(net_count));
+	uint32_t count = swap_endian(net_count);
+
+	std::vector<std::string> vec;
+	vec.reserve(count);
+
+	for (uint32_t i = 0; i < count; ++i) {
+		std::string item = read_string(is);
+		vec.push_back(item);
+	}
+
+	return vec;
+}
 
 void send_exact(socket_t socket_fd, const void *data, size_t size) {
 	const char *buffer = static_cast<const char *>(data);
