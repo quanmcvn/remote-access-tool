@@ -155,6 +155,7 @@ int main(int argc, char *argv[]) {
 			recv_exact(client_socket, &net_size, sizeof(net_size));
 			if (net_size == 0) {
 				std::cout << "file doesn't exist or can't open\n";
+				continue;
 			}
 			uint64_t file_size = swap_endian(net_size);
 			std::ofstream out("downloaded_" + arg, std::ios::binary);
