@@ -68,11 +68,9 @@ public:
 
 	BSTR get() const { return str; }
 
-	// prevent copy
 	BStr(const BStr &) = delete;
 	BStr &operator=(const BStr &) = delete;
 
-	// allow move
 	BStr(BStr &&other) noexcept : str(other.str) { other.str = nullptr; }
 
 	BStr &operator=(BStr &&other) noexcept {
@@ -177,8 +175,6 @@ std::vector<ProcessListing> get_process_running() {
 					throw std::runtime_error("CommandLineToArgvW failed");
 				}
 			}
-
-			
 		}
 	} catch (const std::exception &e) {
 		std::cerr << "Error: " << e.what() << std::endl;
@@ -187,8 +183,16 @@ std::vector<ProcessListing> get_process_running() {
 }
 
 int kill_process(pid_t pid) {
-	// NYI
-	return 1;
+	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+	if (hProcess == NULL) {
+		return 1;
+	}
+	if (!TerminateProcess(hProcess, 1)) {
+		CloseHandle(hProcess);
+		return 1;
+	}
+	CloseHandle(hProcess);
+	return 0;
 }
 #else
 
