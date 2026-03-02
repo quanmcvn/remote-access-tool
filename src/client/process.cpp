@@ -10,6 +10,9 @@ std::vector<ProcessListing> get_process_running() {
 	// NYI
 }
 #else
+
+#include <signal.h>
+
 static std::vector<std::string> read_cmdline(const std::filesystem::path &cmdline_path) {
 	std::ifstream file(cmdline_path, std::ios::binary);
 	if (!file)
@@ -26,6 +29,7 @@ static std::vector<std::string> read_cmdline(const std::filesystem::path &cmdlin
 
 	return args;
 }
+
 std::vector<ProcessListing> get_process_running() {
 	// we read /proc
 	std::vector<ProcessListing> processes;
@@ -56,4 +60,13 @@ std::vector<ProcessListing> get_process_running() {
 	}
 	return processes;
 }
+
+int kill_process(pid_t_t pid) {
+	if (kill(pid, SIGTERM) == 0) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
 #endif

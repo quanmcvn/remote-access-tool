@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unistd.h>
 
+#include "error.hpp"
 #include "file_listing.hpp"
 #include "network.hpp"
 #include "process_listing.hpp"
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) {
 	}
 	socket_t server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_socket < 0) {
-		network_perror("create socket failed");
+		print_error("create socket failed");
 		return 1;
 	}
 
@@ -48,7 +49,7 @@ int main(int argc, char *argv[]) {
 	setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 #endif
 	if (bind(server_socket, (sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-		network_perror("bind failed");
+		print_error("bind failed");
 		return 1;
 	}
 
