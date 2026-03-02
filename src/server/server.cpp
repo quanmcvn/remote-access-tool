@@ -4,10 +4,27 @@
 #include <unistd.h>
 
 #include "file_listing.hpp"
+#include "util.hpp"
 
 #define PORT 12345
 
-int main() {
+int main(int argc, char* argv[]) {
+	int chosen_port = PORT;
+	for (int i = 1; i < argc; ++ i) {
+		std::string arg = std::string(argv[i]);
+		if (arg.starts_with("--server-port=")) {
+			std::string server_port = arg.substr(std::string("--server-port=").length());
+			int port = str_to_int(server_port);
+			if (port < 0) {
+				std::cerr << "--server-port: error in converting " << server_port << " to int\n";
+			} else if (port == 0 || port > 65536) {
+				std::cerr << "--server-port: invalid port " << port << "\n";
+			} else {
+				chosen_port = port;
+			}
+		}
+	}
+
 	if (network_init() != 0) {
 		std::cout << "Network init failed\n";
 		return 1;
@@ -46,8 +63,7 @@ int main() {
 	std::cout << "Client connected!\n";
 	std::cout << client_address_ip <<" " << clientAddr.sin_port << "\n";
 
-	while (true)
-	{
+	while (true) {
 		std::string s;
 		getline(std::cin, s);
 		std::cout << "we say: " << s << "\n";
@@ -69,10 +85,18 @@ int main() {
 				}
 				std::cout << type << " " << f.get_file_path() << "\n";
 			}
-		} else {
-			std::string message = recv_message(client_socket);
-			std::cout << "Client says: " << message << std::endl;
+			continue;
 		}
+		if (s.starts_with("cd ")) {
+			std::string payload = recv_message(client_socket);
+			std::istringstream iss(payload, std::ios::binary);
+			int return_code = read_uint32(iss);
+			std::cout << "Client returns: " << return_code << "\n";
+			continue;
+		}
+		std::string message = recv_message(client_socket);
+		std::cout << "Client says: " << message << std::endl;
+		
 	}
 	
 	CLOSESOCKET(client_socket);

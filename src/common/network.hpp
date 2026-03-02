@@ -1,5 +1,5 @@
-#ifndef NETWORK_HPP
-#define NETWORK_HPP
+#ifndef COMMON_NETWORK_HPP
+#define COMMON_NETWORK_HPP
 
 // cringe cross platform behavior
 

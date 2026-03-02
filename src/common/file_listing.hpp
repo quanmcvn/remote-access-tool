@@ -1,5 +1,5 @@
-#ifndef FILE_LISTING_HPP
-#define FILE_LISTING_HPP
+#ifndef COMMON_FILE_LISTING_HPP
+#define COMMON_FILE_LISTING_HPP
 
 #include <filesystem>
 

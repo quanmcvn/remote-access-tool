@@ -1,5 +1,5 @@
-#ifndef I_SERIALIZEABLE_HPP
-#define I_SERIALIZEABLE_HPP
+#ifndef COMMON_I_SERIALIZEABLE_HPP
+#define COMMON_I_SERIALIZEABLE_HPP
 
 #include <cstdint>
 #include <iostream>

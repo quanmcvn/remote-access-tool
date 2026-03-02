@@ -7,6 +7,7 @@
 #include <format>
 
 #include "file_listing.hpp"
+#include "util.hpp"
 
 #define SERVER_IP "192.168.8.128"
 #define SERVER_PORT 12345
@@ -64,15 +65,27 @@ public:
 
 int main(int argc, char* argv[]) {
 	network_init();
-	std::unique_ptr<Outside> o;
-	if (argc > 1) {
-		if (std::string(argv[1]) == "local") {
-			o = std::make_unique<Outside>(false);
+	std::unique_ptr<Outside> o = std::make_unique<Outside>(true);
+	std::string chosen_ip = SERVER_IP;
+	int chosen_port = SERVER_PORT;
+	for (int i = 1; i < argc; ++ i) {
+		std::string arg = std::string(argv[i]);
+		if (arg.starts_with("--server-ip=")) {
+			std::string server_ip = arg.substr(std::string("--server-ip=").length());
+			chosen_ip = server_ip;
+		} else if (arg.starts_with("--server-port=")) {
+			std::string server_port = arg.substr(std::string("--server-port=").length());
+			int port = str_to_int(server_port);
+			if (port < 0) {
+				std::cerr << "--server-port: error in converting " << server_port << " to int\n";
+			} else if (port == 0 || port > 65536) {
+				std::cerr << "--server-port: invalid port " << port << "\n";
+			} else {
+				chosen_port = port;
+			}
 		}
 	}
-	if (o.get() == nullptr) {
-		o = std::make_unique<Outside>(true);
-	}
+	std::cout << "chosing " << chosen_ip << ":" << chosen_port << "\n";
 
 	while (true) {
 		std::string buffer = o->get_input();
@@ -87,6 +100,19 @@ int main(int argc, char* argv[]) {
 				fl.emplace_back(entry);
 			}
 			serialize_vector(oss, fl);
+			o->send_output(oss.str());
+			continue;
+		}
+		if (buffer.starts_with("cd ")) {
+			std::string arg = buffer.substr(3);
+			std::ostringstream oss(std::ios::binary);
+			try {
+				std::filesystem::current_path(arg);
+				write_uint32(oss, 0);
+			} catch (const std::filesystem::filesystem_error& e) {
+				write_uint32(oss, 1);
+			}
+			std::cerr << oss.str() << "\n";
 			o->send_output(oss.str());
 			continue;
 		}
