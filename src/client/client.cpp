@@ -1,5 +1,6 @@
 #include <cstring>
 #include <format>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -15,7 +16,7 @@
 #define SERVER_PORT 12345
 
 class Outside {
-private:
+  private:
 	std::string server_ip;
 	int server_port;
 	int client_socket = 0;
@@ -38,19 +39,15 @@ private:
 		std::cerr << "init done\n";
 	}
 
-public:
-	Outside(std::string n_server_ip, int n_server_port) : server_ip(n_server_ip), server_port(n_server_port) {
-			init_non_local();
+  public:
+	Outside(std::string n_server_ip, int n_server_port)
+	    : server_ip(n_server_ip), server_port(n_server_port) {
+		init_non_local();
 	}
-	std::string get_input() const {
-		return recv_message(client_socket);
-	}
-	void send_output(const std::string &message) const {
-		send_message(client_socket, message);
-	}
-	~Outside() {
-		CLOSESOCKET(client_socket);
-	}
+	std::string get_input() const { return recv_message(client_socket); }
+	void send_output(const std::string &message) const { send_message(client_socket, message); }
+	int get_client_socket() const { return client_socket; }
+	~Outside() { CLOSESOCKET(client_socket); }
 };
 
 int main(int argc, char *argv[]) {
@@ -95,7 +92,7 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 		if (buffer.starts_with("cd ")) {
-			std::string arg = buffer.substr(3);
+			std::string arg = buffer.substr(std::string("cd ").length());
 			std::ostringstream oss(std::ios::binary);
 			try {
 				std::filesystem::current_path(arg);
@@ -115,7 +112,7 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 		if (buffer.starts_with("kill ")) {
-			std::string arg = buffer.substr(5);
+			std::string arg = buffer.substr(std::string("kill ").length());
 			std::ostringstream oss(std::ios::binary);
 			int pid = str_to_int(arg);
 			if (pid <= 0) {
@@ -132,6 +129,38 @@ int main(int argc, char *argv[]) {
 				}
 			}
 			o->send_output(oss.str());
+			continue;
+		}
+		if (buffer.starts_with("download ")) {
+			std::string arg = buffer.substr(std::string("download ").length());
+			// doing special packet sending due to big file (may or may not)
+			std::ifstream file(arg, std::ios::binary);
+			int client_socket = o->get_client_socket();
+			if (!file) {
+				uint64_t size = 0;
+				// doesn't need to swap endian because 0
+				send_exact(client_socket, &size, sizeof(size));
+				continue;
+			}
+
+			// reading file_size by seeking to end
+			file.seekg(0, std::ios::end);
+			uint64_t file_size = file.tellg();
+			file.seekg(0);
+
+			uint64_t net_file_size = swap_endian(file_size);
+			send_exact(client_socket, &net_file_size, sizeof(net_file_size));
+
+			const uint64_t BUFFER_SIZE = 8192;
+			char buffer[BUFFER_SIZE];
+
+			while (file) {
+				file.read(buffer, BUFFER_SIZE);
+				std::streamsize bytes_read = file.gcount();
+				if (bytes_read > 0) {
+					send_exact(client_socket, buffer, bytes_read);
+				}
+			}
 			continue;
 		}
 		o->send_output(std::format("{}: not recognized", buffer.c_str()));

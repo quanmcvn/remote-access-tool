@@ -7,6 +7,18 @@ std::uint32_t swap_endian(std::uint32_t value) {
 	       ((value & 0x00FF0000u) >> 8) | ((value & 0xFF000000u) >> 24);
 }
 
+std::uint64_t swap_endian(std::uint64_t value) {
+	uint8_t bytes[8];
+	for (int i = 0; i < 8; ++i) {
+		bytes[i] = value >> (8 * i) & 0xffu;
+	}
+	value = 0;
+	for (int i = 0; i < 8; ++i) {
+		value = value | (static_cast<uint64_t>(bytes[i]) << (8 * (7 - i)));
+	}
+	return value;
+}
+
 std::int32_t swap_endian(std::int32_t value) {
 	std::uint32_t u = static_cast<std::uint32_t>(value);
 	u = swap_endian(u);

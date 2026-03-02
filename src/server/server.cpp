@@ -1,4 +1,5 @@
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <unistd.h>
 
@@ -9,6 +10,35 @@
 #include "util.hpp"
 
 #define PORT 12345
+
+void print_progress(int64_t totalReceived, int64_t fileSize,
+                    std::chrono::steady_clock::time_point startTime) {
+
+	double progress = (double)totalReceived / fileSize;
+	const int BAR_WIDTH = 50;
+	int pos = BAR_WIDTH * progress;
+
+	auto now = std::chrono::steady_clock::now();
+	double seconds = std::chrono::duration<double>(now - startTime).count();
+
+	double speed = (totalReceived / 1024.0 / 1024.0) / seconds;
+
+	std::cout << "\r[";
+	for (int i = 0; i < BAR_WIDTH; ++i) {
+		if (i < pos)
+			std::cout << "=";
+		else if (i == pos)
+			std::cout << ">";
+		else
+			std::cout << " ";
+	}
+
+	std::cout << "] " << std::fixed << std::setprecision(1) << (progress * 100.0) << "% "
+	          << "(" << totalReceived / 1024 / 1024 << " MB / " << fileSize / 1024 / 1024 << " MB) "
+	          << speed << " MB/s   ";
+
+	std::cout.flush();
+}
 
 int main(int argc, char *argv[]) {
 	int chosen_port = PORT;
@@ -117,6 +147,36 @@ int main(int argc, char *argv[]) {
 			int return_code = read_uint32(iss);
 			std::string error_code = read_string(iss);
 			std::cout << "client returns: " << return_code << " " << error_code << "\n";
+			continue;
+		}
+		if (s.starts_with("download ")) {
+			std::string arg = s.substr(std::string("download ").length());
+			uint64_t net_size;
+			recv_exact(client_socket, &net_size, sizeof(net_size));
+			if (net_size == 0) {
+				std::cout << "file doesn't exist or can't open\n";
+			}
+			uint64_t file_size = swap_endian(net_size);
+			std::ofstream out("downloaded_" + arg, std::ios::binary);
+
+			const uint64_t BUFFER_SIZE = 8192;
+			char buffer[BUFFER_SIZE];
+			uint64_t total_received = 0;
+
+			auto start_time = std::chrono::steady_clock::now();
+
+			while (total_received < file_size) {
+				ssize_t bytes = recv(client_socket, buffer,
+				                     std::min(BUFFER_SIZE, file_size - total_received), 0);
+				if (bytes <= 0)
+					break;
+
+				out.write(buffer, bytes);
+				total_received += bytes;
+
+				print_progress(total_received, file_size, start_time);
+			}
+			std::cout << "download completed\n";
 			continue;
 		}
 		std::string message = recv_message(client_socket);

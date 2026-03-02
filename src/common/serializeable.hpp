@@ -19,6 +19,7 @@ public:
 // apparently c++23 has std::byteswap
 std::uint32_t swap_endian(std::uint32_t value);
 std::int32_t swap_endian(std::int32_t value);
+std::uint64_t swap_endian(std::uint64_t value);
 
 void write_uint32(std::ostream &os, std::uint32_t value);
 std::uint32_t read_uint32(std::istream &is);
