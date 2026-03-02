@@ -27,8 +27,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	std::cout << "choosing port: " << chosen_port << "\n";
+
 	if (network_init() != 0) {
-		std::cout << "Network init failed\n";
+		print_error("network init failed");
 		return 1;
 	}
 	socket_t server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -39,7 +41,7 @@ int main(int argc, char *argv[]) {
 
 	sockaddr_in server_addr{};
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(12345);
+	server_addr.sin_port = htons(chosen_port);
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 
 	int opt = 1;
@@ -54,7 +56,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	listen(server_socket, 1);
-	std::cout << "Server listening on port " << PORT << "...\n";
+	std::cout << "server listening on port " << chosen_port << "...\n";
 
 	sockaddr_in clientAddr{};
 	socklen_t clientSize = sizeof(clientAddr);
@@ -62,7 +64,7 @@ int main(int argc, char *argv[]) {
 
 	char client_address_ip[18];
 	inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, client_address_ip, 18);
-	std::cout << "Client connected!\n";
+	std::cout << "client connected!\n";
 	std::cout << client_address_ip << " " << clientAddr.sin_port << "\n";
 
 	while (true) {
@@ -93,7 +95,7 @@ int main(int argc, char *argv[]) {
 			std::string payload = recv_message(client_socket);
 			std::istringstream iss(payload, std::ios::binary);
 			int return_code = read_uint32(iss);
-			std::cout << "Client returns: " << return_code << "\n";
+			std::cout << "client returns: " << return_code << "\n";
 			continue;
 		}
 		if (s.starts_with("ps")) {
@@ -114,11 +116,11 @@ int main(int argc, char *argv[]) {
 			std::istringstream iss(payload, std::ios::binary);
 			int return_code = read_uint32(iss);
 			std::string error_code = read_string(iss);
-			std::cout << "Client returns: " << return_code << " " << error_code << "\n";
+			std::cout << "client returns: " << return_code << " " << error_code << "\n";
 			continue;
 		}
 		std::string message = recv_message(client_socket);
-		std::cout << "Client says: " << message << std::endl;
+		std::cout << "client says: " << message << std::endl;
 	}
 
 	CLOSESOCKET(client_socket);

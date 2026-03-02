@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
 	while (true) {
 		std::string buffer = o->get_input();
-		std::cout << "Server says: " << buffer << std::endl;
+		std::cout << "server says: " << buffer << std::endl;
 		if (buffer == "exit") {
 			break;
 		}
