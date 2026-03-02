@@ -1,16 +1,17 @@
-#include "network.hpp"
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
 
 #include "file_listing.hpp"
+#include "network.hpp"
+#include "process_listing.hpp"
 #include "util.hpp"
 
 #define PORT 12345
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
 	int chosen_port = PORT;
-	for (int i = 1; i < argc; ++ i) {
+	for (int i = 1; i < argc; ++i) {
 		std::string arg = std::string(argv[i]);
 		if (arg.starts_with("--server-port=")) {
 			std::string server_port = arg.substr(std::string("--server-port=").length());
@@ -41,11 +42,11 @@ int main(int argc, char* argv[]) {
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 
 	int opt = 1;
-	#ifdef _WIN32
-		setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char*)(&opt), sizeof(opt));
-	#else
-		setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-	#endif
+#ifdef _WIN32
+	setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)(&opt), sizeof(opt));
+#else
+	setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+#endif
 	if (bind(server_socket, (sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
 		network_perror("bind failed");
 		return 1;
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
 	char client_address_ip[18];
 	inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, client_address_ip, 18);
 	std::cout << "Client connected!\n";
-	std::cout << client_address_ip <<" " << clientAddr.sin_port << "\n";
+	std::cout << client_address_ip << " " << clientAddr.sin_port << "\n";
 
 	while (true) {
 		std::string s;
@@ -74,8 +75,8 @@ int main(int argc, char* argv[]) {
 		if (s == "ls") {
 			std::string payload = recv_message(client_socket);
 			std::istringstream iss(payload, std::ios::binary);
-			std::vector<FileListing> fl = deserialize_vector<FileListing>(iss);
-			for (const auto& f : fl) {
+			std::vector<FileListing> fl = read_vector_serializeable<FileListing>(iss);
+			for (const auto &f : fl) {
 				std::string type = "[OTHER]";
 				if (f.is_directory()) {
 					type = "[DIR]  ";
@@ -94,11 +95,23 @@ int main(int argc, char* argv[]) {
 			std::cout << "Client returns: " << return_code << "\n";
 			continue;
 		}
+		if (s.starts_with("ps")) {
+			std::string payload = recv_message(client_socket);
+			std::istringstream iss(payload, std::ios::binary);
+			std::vector<ProcessListing> processes = read_vector_serializeable<ProcessListing>(iss);
+			for (const auto &proc : processes) {
+				std::cout << proc.get_pid() << " " << proc.get_proc_name() << "\n";
+				for (const auto &arg : proc.get_args()) {
+					std::cout << arg << " ";
+				}
+				std::cout << "\n";
+			}
+			continue;
+		}
 		std::string message = recv_message(client_socket);
 		std::cout << "Client says: " << message << std::endl;
-		
 	}
-	
+
 	CLOSESOCKET(client_socket);
 	CLOSESOCKET(server_socket);
 

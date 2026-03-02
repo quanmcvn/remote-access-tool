@@ -11,6 +11,8 @@ FileListing::FileListing(const std::filesystem::directory_entry& path) : file_pa
 	}
 }
 
+FileListing::~FileListing() {}
+
 void FileListing::serialize(std::ostream& os) const {
 	write_string(os, file_path);
 	write_uint32(os, static_cast<std::uint32_t>(file_flag));

@@ -7,9 +7,10 @@
 #include "network.hpp"
 
 class ISerializeable {
-  public:
+public:
 	virtual void serialize(std::ostream &os) const = 0;
 	virtual void deserialize(std::istream &is) = 0;
+	virtual ~ISerializeable() {};
 };
 
 // some functions to help with serialization
@@ -25,13 +26,10 @@ std::uint32_t read_uint32(std::istream &is);
 void write_string(std::ostream &os, const std::string &str);
 std::string read_string(std::istream &is);
 
-void send_exact(socket_t socket_fd, const void *data, size_t size);
-void recv_exact(socket_t socket_fd, const void *data, size_t size);
+void write_vector_string(std::ostream& os, const std::vector<std::string>& vec);
+std::vector<std::string> read_vector_string(std::istream& is);
 
-void send_message(socket_t socket_fd, const std::string &payload);
-std::string recv_message(socket_t socket_fd);
-
-template <typename T> void serialize_vector(std::ostream &os, const std::vector<T> &vec) {
+template <typename T> void write_vector_serializeable(std::ostream &os, const std::vector<T> &vec) {
 	uint32_t count = static_cast<uint32_t>(vec.size());
 	uint32_t net_count = swap_endian(count);
 
@@ -42,7 +40,7 @@ template <typename T> void serialize_vector(std::ostream &os, const std::vector<
 	}
 }
 
-template <typename T> std::vector<T> deserialize_vector(std::istream &is) {
+template <typename T> std::vector<T> read_vector_serializeable(std::istream &is) {
 	uint32_t net_count;
 	is.read(reinterpret_cast<char*>(&net_count), sizeof(net_count));
 	uint32_t count = swap_endian(net_count);
@@ -58,5 +56,11 @@ template <typename T> std::vector<T> deserialize_vector(std::istream &is) {
 
 	return vec;
 }
+
+void send_exact(socket_t socket_fd, const void *data, size_t size);
+void recv_exact(socket_t socket_fd, const void *data, size_t size);
+
+void send_message(socket_t socket_fd, const std::string &payload);
+std::string recv_message(socket_t socket_fd);
 
 #endif

@@ -1,4 +1,3 @@
-#include "network.hpp"
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
@@ -7,7 +6,9 @@
 #include <format>
 
 #include "file_listing.hpp"
+#include "network.hpp"
 #include "util.hpp"
+#include "process.hpp"
 
 #define SERVER_IP "192.168.8.128"
 #define SERVER_PORT 12345
@@ -99,7 +100,7 @@ int main(int argc, char* argv[]) {
 			for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path())) {
 				fl.emplace_back(entry);
 			}
-			serialize_vector(oss, fl);
+			write_vector_serializeable(oss, fl);
 			o->send_output(oss.str());
 			continue;
 		}
@@ -113,6 +114,13 @@ int main(int argc, char* argv[]) {
 				write_uint32(oss, 1);
 			}
 			std::cerr << oss.str() << "\n";
+			o->send_output(oss.str());
+			continue;
+		}
+		if (buffer == "ps") {
+			std::vector<ProcessListing> processes = get_process_running();
+			std::ostringstream oss(std::ios::binary);
+			write_vector_serializeable(oss, processes);
 			o->send_output(oss.str());
 			continue;
 		}

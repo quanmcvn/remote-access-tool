@@ -3,6 +3,14 @@ add_executable(client)
 target_sources(client
     PRIVATE
         client.cpp
+        process.cpp
+)
+
+target_sources(client
+	PRIVATE
+		FILE_SET HEADERS
+		FILES
+			process.hpp
 )
 
 target_compile_features(client PRIVATE cxx_std_20)
