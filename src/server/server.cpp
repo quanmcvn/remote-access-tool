@@ -174,7 +174,11 @@ void server_input_thread(int server_socket) {
 		}
 	}
 	server_running = false;
+#ifdef _WIN32
+	CLOSESOCKET(server_socket);
+#else
 	shutdown(server_socket, SHUT_RDWR);
+#endif
 }
 
 int main(int argc, char *argv[]) {
