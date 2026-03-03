@@ -30,38 +30,42 @@ struct ClientSession {
 
 std::map<int, ClientSession> clients;
 
-class RealCommandProcessor : public CommandProcessor {
-public:
-	int process(const std::string& command) override {
-		if (command == "exit") {
-			std::lock_guard<std::mutex> lock(client_mutex);
-			for (auto &[id, client] : clients) {
-				client.message_queue.push(std::string("exit"));
-			}
-			return 2;
-		}
+}
 
-		size_t pos = command.find(':');
-		if (pos == std::string::npos) {
-			std::cerr << "format: client_id:message\n";
-			return 1;
-		}
-
-		int target_id = str_to_int(command.substr(0, pos));
-		std::string message = command.substr(pos + 1);
-
-		std::lock_guard<std::mutex> lock(client_mutex);
-
-		auto it = clients.find(target_id);
-		if (it == clients.end()) {
-			std::cerr << "can't find client with id " << target_id << " (from "
-			          << command.substr(0, pos) << ")\n";
-			return 1;
-		}
-		it->second.message_queue.push(message);
-		return 0;
+int RealCommandProcessor::process(const std::string& command) {
+	if (command.empty()) {
+		std::cout << "command empty!\n";
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		return 1;
 	}
-};
+	if (command == "exit") {
+		std::lock_guard<std::mutex> lock(client_mutex);
+		for (auto &[id, client] : clients) {
+			client.message_queue.push(std::string("exit"));
+		}
+		return 2;
+	}
+
+	size_t pos = command.find(':');
+	if (pos == std::string::npos) {
+		std::cerr << "format: client_id:message: " << command << "\n";
+		return 1;
+	}
+
+	int target_id = str_to_int(command.substr(0, pos));
+	std::string message = command.substr(pos + 1);
+
+	std::lock_guard<std::mutex> lock(client_mutex);
+
+	auto it = clients.find(target_id);
+	if (it == clients.end()) {
+		std::cerr << "can't find client with id " << target_id << " (from "
+					<< command.substr(0, pos) << ")\n";
+		return 1;
+	}
+	it->second.message_queue.push(message);
+	return 0;
+}
 
 void handle_client(int client_socket, int client_id) {
 	while (true) {
@@ -177,12 +181,10 @@ void handle_client(int client_socket, int client_id) {
 	CLOSESOCKET(client_socket);
 }
 
-} // namespace
-
-void server_input_thread(std::istream& input_stream, CommandProcessor& processor, int server_socket) {
+void server_input_thread(GetInput& input_stream, CommandProcessor& processor, int server_socket) {
+	int cnt = 0;
 	while (true) {
-		std::string input;
-		std::getline(input_stream, input);
+		std::string input = input_stream.get_input();
 		int ret = processor.process(input);
 		if (ret == 0) continue;
 		if (ret == 1) continue;
@@ -210,7 +212,7 @@ void server_input_thread(std::istream& input_stream, CommandProcessor& processor
 #endif
 }
 
-int server_main(int argc, char *argv[]) {
+int server_main(int argc, char *argv[], GetInput& input_stream, CommandProcessor& command_processor) {
 	int chosen_port = PORT;
 	for (int i = 1; i < argc; ++i) {
 		std::string arg = std::string(argv[i]);
@@ -258,9 +260,7 @@ int server_main(int argc, char *argv[]) {
 	listen(server_socket, 1);
 	std::cout << "server listening on port " << chosen_port << "...\n";
 
-	RealCommandProcessor command_processor;
-
-	std::thread input_thread(server_input_thread, std::ref(std::cin), std::ref(command_processor), server_socket);
+	std::thread input_thread(server_input_thread, std::ref(input_stream), std::ref(command_processor), server_socket);
 
 	int client_counter = 1;
 

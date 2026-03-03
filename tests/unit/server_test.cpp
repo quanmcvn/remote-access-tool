@@ -19,18 +19,19 @@ public:
 } // namespace
 
 TEST(ServerTest, server_input_thread) {
-	std::istringstream fake_input("1:ls\n"
+	FakeInput fake_input;
+	fake_input.add_input("1:ls\n"
 	                              "2:cd dir1\n"
 	                              "2:pwd\n"
 	                              "1:exit\n"
 	                              "exit\n"
 	                              "1:ls");
-
+	
 	FakeCommandProcessor command_processor;
 
 	std::thread t([&]() {
 		// close socket -1, unfortunately I don't have better way rn
-		server_input_thread(fake_input, command_processor, -1);
+		server_input_thread(std::ref(fake_input), std::ref(command_processor), -1);
 	});
 
 	t.join();
