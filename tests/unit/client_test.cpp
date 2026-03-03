@@ -19,7 +19,7 @@ protected:
 	void TearDown() override { std::filesystem::remove_all(temp_dir); }
 };
 
-TEST_F(ShellFsTest, LsListsFiles) {
+TEST_F(ShellFsTest, ls) {
 	std::vector<std::string> filenames_to_test;
 	filenames_to_test.push_back("a.txt");
 	filenames_to_test.push_back("b.c");
@@ -44,4 +44,35 @@ TEST_F(ShellFsTest, LsListsFiles) {
 	for (const auto& f : filenames_to_test) {
 		EXPECT_NE(filenames.find(f), filenames.end());
 	}
+}
+
+TEST_F(ShellFsTest, cd_and_pwd) {
+	std::filesystem::create_directory(temp_dir / "dir1");
+	
+	std::string result_cd = run("cd dir1");
+	std::istringstream iss(result_cd, std::ios::binary);
+	uint32_t ret = read_uint32(iss);
+	EXPECT_EQ(ret, 0);
+
+	std::string result_pwd = run("pwd");
+	iss = std::istringstream(result_pwd, std::ios::binary);
+	std::string path = read_string(iss);
+
+	EXPECT_EQ(path, (temp_dir / "dir1").string());
+}
+
+TEST_F(ShellFsTest, cd_failed_and_pwd) {
+	// no dir1 to cd to
+	// std::filesystem::create_directory(temp_dir / "dir1");
+	
+	std::string result_cd = run("cd dir1");
+	std::istringstream iss(result_cd, std::ios::binary);
+	uint32_t ret = read_uint32(iss);
+	EXPECT_EQ(ret, 1);
+
+	std::string result_pwd = run("pwd");
+	iss = std::istringstream(result_pwd, std::ios::binary);
+	std::string path = read_string(iss);
+
+	EXPECT_EQ(path, (temp_dir).string());
 }

@@ -78,6 +78,13 @@ void handle_client(int client_socket, int client_id) {
 			std::cout << "client returns: " << return_code << "\n";
 			continue;
 		}
+		if (command == "pwd") {
+			std::string payload = recv_message(client_socket);
+			std::istringstream iss(payload, std::ios::binary);
+			std::string pwd = read_string(iss);
+			std::cout << pwd << "\n";
+			continue;
+		}
 		if (command.starts_with("ps")) {
 			std::string payload = recv_message(client_socket);
 			std::istringstream iss(payload, std::ios::binary);

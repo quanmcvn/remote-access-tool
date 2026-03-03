@@ -77,6 +77,12 @@ std::string run(const std::string &command) {
 		}
 		return oss.str();
 	}
+	if (command == "pwd") {
+		std::string arg = command.substr(std::string("cd ").length());
+		std::ostringstream oss(std::ios::binary);
+		write_string(oss, std::filesystem::current_path().string());
+		return oss.str();
+	}
 	if (command == "ps") {
 		std::vector<ProcessListing> processes = get_process_running();
 		std::ostringstream oss(std::ios::binary);
