@@ -6,6 +6,7 @@
 #include <sstream>
 #include <unistd.h>
 
+#include "client.hpp"
 #include "error.hpp"
 #include "file_listing.hpp"
 #include "network.hpp"
@@ -15,8 +16,10 @@
 #define SERVER_IP "192.168.8.128"
 #define SERVER_PORT 12345
 
+namespace {
+
 class Outside {
-  private:
+private:
 	std::string server_ip;
 	int server_port;
 	int client_socket = 0;
@@ -39,7 +42,7 @@ class Outside {
 		std::cerr << "init done\n";
 	}
 
-  public:
+public:
 	Outside(std::string n_server_ip, int n_server_port)
 	    : server_ip(n_server_ip), server_port(n_server_port) {
 		init_non_local();
@@ -50,8 +53,58 @@ class Outside {
 	~Outside() { CLOSESOCKET(client_socket); }
 };
 
-int main(int argc, char *argv[]) {
-	network_init();
+} // namespace
+
+std::string run(const std::string &command) {
+	if (command == "ls") {
+		std::ostringstream oss(std::ios::binary);
+		std::vector<FileListing> fl;
+		for (const auto &entry :
+		     std::filesystem::directory_iterator(std::filesystem::current_path())) {
+			fl.emplace_back(entry);
+		}
+		write_vector_serializeable(oss, fl);
+		return oss.str();
+	}
+	if (command.starts_with("cd ")) {
+		std::string arg = command.substr(std::string("cd ").length());
+		std::ostringstream oss(std::ios::binary);
+		try {
+			std::filesystem::current_path(arg);
+			write_uint32(oss, 0);
+		} catch (const std::filesystem::filesystem_error &e) {
+			write_uint32(oss, 1);
+		}
+		return oss.str();
+	}
+	if (command == "ps") {
+		std::vector<ProcessListing> processes = get_process_running();
+		std::ostringstream oss(std::ios::binary);
+		write_vector_serializeable(oss, processes);
+		return oss.str();
+	}
+	if (command.starts_with("kill ")) {
+		std::string arg = command.substr(std::string("kill ").length());
+		std::ostringstream oss(std::ios::binary);
+		int pid = str_to_int(arg);
+		if (pid <= 0) {
+			write_uint32(oss, 1u);
+			write_string(oss, std::format("can't parse pid {} to int or invalid", pid));
+		} else {
+			int return_code = kill_process(pid);
+			write_uint32(oss, return_code);
+			if (return_code == 0) {
+				write_string(oss, "ok");
+			} else {
+				write_string(oss, std::format("kill: {}", get_last_error_string(get_last_error())));
+			}
+		}
+		return oss.str();
+	}
+	return std::format("{}: not recognized", command.c_str());
+}
+
+int client_main(int argc, char *argv[]) {
 	std::string chosen_ip = SERVER_IP;
 	int chosen_port = SERVER_PORT;
 	for (int i = 1; i < argc; ++i) {
@@ -80,57 +133,7 @@ int main(int argc, char *argv[]) {
 		if (buffer == "exit") {
 			break;
 		}
-		if (buffer == "ls") {
-			std::ostringstream oss(std::ios::binary);
-			std::vector<FileListing> fl;
-			for (const auto &entry :
-			     std::filesystem::directory_iterator(std::filesystem::current_path())) {
-				fl.emplace_back(entry);
-			}
-			write_vector_serializeable(oss, fl);
-			o->send_output(oss.str());
-			continue;
-		}
-		if (buffer.starts_with("cd ")) {
-			std::string arg = buffer.substr(std::string("cd ").length());
-			std::ostringstream oss(std::ios::binary);
-			try {
-				std::filesystem::current_path(arg);
-				write_uint32(oss, 0);
-			} catch (const std::filesystem::filesystem_error &e) {
-				write_uint32(oss, 1);
-			}
-			std::cerr << oss.str() << "\n";
-			o->send_output(oss.str());
-			continue;
-		}
-		if (buffer == "ps") {
-			std::vector<ProcessListing> processes = get_process_running();
-			std::ostringstream oss(std::ios::binary);
-			write_vector_serializeable(oss, processes);
-			o->send_output(oss.str());
-			continue;
-		}
-		if (buffer.starts_with("kill ")) {
-			std::string arg = buffer.substr(std::string("kill ").length());
-			std::ostringstream oss(std::ios::binary);
-			int pid = str_to_int(arg);
-			if (pid <= 0) {
-				write_uint32(oss, 1u);
-				write_string(oss, std::format("can't parse pid {} to int or invalid", pid));
-			} else {
-				int return_code = kill_process(pid);
-				write_uint32(oss, return_code);
-				if (return_code == 0) {
-					write_string(oss, "ok");
-				} else {
-					write_string(oss,
-					             std::format("kill: {}", get_last_error_string(get_last_error())));
-				}
-			}
-			o->send_output(oss.str());
-			continue;
-		}
+		// hard to unit test download...
 		if (buffer.starts_with("download ")) {
 			std::string arg = buffer.substr(std::string("download ").length());
 			// doing special packet sending due to big file (may or may not)
@@ -163,8 +166,8 @@ int main(int argc, char *argv[]) {
 			}
 			continue;
 		}
-		o->send_output(std::format("{}: not recognized", buffer.c_str()));
+		std::string message = run(buffer);
+		o->send_output(message);
 	}
-	network_cleanup();
 	return 0;
 }

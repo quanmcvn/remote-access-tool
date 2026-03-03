@@ -1,17 +1,29 @@
-add_executable(server)
-
-target_sources(server
-    PRIVATE
-        server.cpp
+add_library(server_lib)
+target_sources(server_lib
+	PRIVATE
+		server.cpp
+)
+target_sources(server_lib
+	PUBLIC
+		FILE_SET HEADERS
+		FILES
+			server.hpp
+)
+target_link_libraries(server_lib
+	PUBLIC
+		common
 )
 
-target_compile_features(server PRIVATE cxx_std_20)
-
+add_executable(server)
+target_sources(server
+	PRIVATE
+		main.cpp
+)
 target_link_libraries(server
-    PRIVATE
-        common
+	PUBLIC
+		server_lib
 )
 
 if (WIN32)
-    target_link_libraries(server PRIVATE ws2_32)
+	target_link_libraries(server_lib PUBLIC ws2_32)
 endif()

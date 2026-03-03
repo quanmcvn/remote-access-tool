@@ -15,6 +15,8 @@
 
 #define PORT 12345
 
+namespace {
+
 std::atomic<bool> server_running(true);
 std::mutex client_mutex;
 int client_counter = 0;
@@ -53,15 +55,19 @@ void handle_client(int client_socket, int client_id) {
 			std::string payload = recv_message(client_socket);
 			std::istringstream iss(payload, std::ios::binary);
 			std::vector<FileListing> fl = read_vector_serializeable<FileListing>(iss);
-			for (const auto &f : fl) {
-				std::string type = "[OTHER]";
-				if (f.is_directory()) {
-					type = "[DIR]  ";
+			if (fl.empty()) {
+				std::cout << "[EMPTY]\n";
+			} else {
+				for (const auto &f : fl) {
+					std::string type = "[OTHER]";
+					if (f.is_directory()) {
+						type = "[DIR]  ";
+					}
+					if (f.is_regular_file()) {
+						type = "[FILE] ";
+					}
+					std::cout << type << " " << f.get_file_path() << "\n";
 				}
-				if (f.is_regular_file()) {
-					type = "[FILE] ";
-				}
-				std::cout << type << " " << f.get_file_path() << "\n";
 			}
 			continue;
 		}
@@ -137,7 +143,7 @@ void server_input_thread(int server_socket) {
 
 		if (input == "exit") {
 			std::lock_guard<std::mutex> lock(client_mutex);
-			for (auto& [id, client] : clients) {
+			for (auto &[id, client] : clients) {
 				client.message_queue.push(std::string("exit"));
 			}
 			break;
@@ -158,7 +164,8 @@ void server_input_thread(int server_socket) {
 		if (it != clients.end()) {
 			it->second.message_queue.push(message);
 		} else {
-			std::cerr << "can't find client with id " << target_id << " (from " << input.substr(0, pos) << ")\n";
+			std::cerr << "can't find client with id " << target_id << " (from "
+			          << input.substr(0, pos) << ")\n";
 		}
 	}
 	while (true) {
@@ -181,7 +188,9 @@ void server_input_thread(int server_socket) {
 #endif
 }
 
-int main(int argc, char *argv[]) {
+} // namespace
+
+int server_main(int argc, char *argv[]) {
 	int chosen_port = PORT;
 	for (int i = 1; i < argc; ++i) {
 		std::string arg = std::string(argv[i]);
