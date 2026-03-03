@@ -205,11 +205,7 @@ void server_input_thread(GetInput& input_stream, CommandProcessor& processor, in
 	}
 	server_running = false;
 	// have to close socket here because accept() blocks...
-#ifdef _WIN32
 	CLOSESOCKET(server_socket);
-#else
-	shutdown(server_socket, SHUT_RDWR);
-#endif
 }
 
 int server_main(int argc, char *argv[], GetInput& input_stream, CommandProcessor& command_processor) {

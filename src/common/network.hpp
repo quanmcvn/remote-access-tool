@@ -32,7 +32,7 @@ static inline void network_cleanup() {
 
 typedef int socket_t;
 
-#define CLOSESOCKET close
+#define CLOSESOCKET(socket_fd) { shutdown(socket_fd, SHUT_RDWR); close(socket_fd); }
 
 static inline int network_init() {
 	return 0;
