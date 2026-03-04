@@ -157,10 +157,11 @@ int client_main(int argc, char *argv[]) {
 				continue;
 			}
 
-			// reading file_size by seeking to end
-			file.seekg(0, std::ios::end);
-			uint64_t file_size = file.tellg();
-			file.seekg(0);
+			uint64_t file_size = std::filesystem::file_size(std::filesystem::path(arg));
+			if (file_size == 0) {
+				send_exact(client_socket, &file_size, sizeof(file_size));
+				continue;
+			}
 
 			uint64_t net_file_size = swap_endian(file_size);
 			send_exact(client_socket, &net_file_size, sizeof(net_file_size));
