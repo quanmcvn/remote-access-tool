@@ -4,6 +4,7 @@ target_sources(common
 	PRIVATE
 		error.cpp
 		file_listing.cpp
+		network.cpp
 		serializeable.cpp
 		process_listing.cpp
 		util.cpp

@@ -22,7 +22,7 @@ class Outside {
 private:
 	std::string server_ip;
 	int server_port;
-	int client_socket = 0;
+	socket_t client_socket;
 	sockaddr_in serverAddr;
 
 	void init_non_local() {
@@ -50,7 +50,7 @@ public:
 	std::string get_input() const { return recv_message(client_socket); }
 	void send_output(const std::string &message) const { send_message(client_socket, message); }
 	int get_client_socket() const { return client_socket; }
-	~Outside() { CLOSESOCKET(client_socket); }
+	~Outside() { network_close_socket(client_socket); }
 };
 
 } // namespace

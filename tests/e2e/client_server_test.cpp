@@ -2,13 +2,10 @@
 
 #include "client.hpp"
 #include "server.hpp"
+#include "network.hpp"
 
-#include <future>
-
-#include <arpa/inet.h>
 #include <format>
-#include <sys/socket.h>
-#include <sys/types.h>
+#include <future>
 
 bool is_port_available(int port) {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -22,11 +19,10 @@ bool is_port_available(int port) {
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 
-	// Try binding to the port
 	int result = bind(sockfd, (struct sockaddr *)&addr, sizeof(addr));
-	close(sockfd);
+	network_close_socket(sockfd);
 
-	return result == 0; // Success if bind returned 0
+	return result == 0;
 }
 
 class Args {

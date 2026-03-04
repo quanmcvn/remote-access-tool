@@ -23,7 +23,7 @@ std::mutex client_mutex;
 int client_counter = 0;
 
 struct ClientSession {
-	int socket;
+	socket_t socket;
 	int id;
 	std::queue<std::string> message_queue;
 };
@@ -67,7 +67,7 @@ int RealCommandProcessor::process(const std::string& command) {
 	return 0;
 }
 
-void handle_client(int client_socket, int client_id) {
+void handle_client(socket_t client_socket, int client_id) {
 	while (true) {
 		// polling for message
 		// not the best way to do this
@@ -82,7 +82,7 @@ void handle_client(int client_socket, int client_id) {
 			command = message_queue.front();
 			message_queue.pop();
 		}
-		std::cout << "we say: " << command << "\n";
+		std::cout << "to client #" << client_id <<  " we say: " << command << "\n";
 		send_message(client_socket, command);
 		if (command == "exit") {
 			std::lock_guard<std::mutex> lock(client_mutex);
@@ -178,11 +178,10 @@ void handle_client(int client_socket, int client_id) {
 		std::string message = recv_message(client_socket);
 		std::cout << "client says: " << message << std::endl;
 	}
-	CLOSESOCKET(client_socket);
+	network_close_socket(client_socket);
 }
 
-void server_input_thread(GetInput& input_stream, CommandProcessor& processor, int server_socket) {
-	int cnt = 0;
+void server_input_thread(GetInput& input_stream, CommandProcessor& processor, socket_t server_socket) {
 	while (true) {
 		std::string input = input_stream.get_input();
 		int ret = processor.process(input);
@@ -205,7 +204,7 @@ void server_input_thread(GetInput& input_stream, CommandProcessor& processor, in
 	}
 	server_running = false;
 	// have to close socket here because accept() blocks...
-	CLOSESOCKET(server_socket);
+	network_close_socket(server_socket);
 }
 
 int server_main(int argc, char *argv[], GetInput& input_stream, CommandProcessor& command_processor) {
@@ -263,7 +262,7 @@ int server_main(int argc, char *argv[], GetInput& input_stream, CommandProcessor
 	while (server_running) {
 		sockaddr_in clientAddr{};
 		socklen_t clientSize = sizeof(clientAddr);
-		int client_socket = accept(server_socket, (sockaddr *)&clientAddr, &clientSize);
+		socket_t client_socket = accept(server_socket, (sockaddr *)&clientAddr, &clientSize);
 		if (!server_running || client_socket < 0) {
 			break;
 		}
