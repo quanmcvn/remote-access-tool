@@ -13,7 +13,7 @@
 #include "process.hpp"
 #include "util.hpp"
 
-#define SERVER_IP "192.168.8.128"
+#define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 12345
 
 namespace {

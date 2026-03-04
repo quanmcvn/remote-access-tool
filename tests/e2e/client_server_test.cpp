@@ -37,7 +37,6 @@ public:
 int run_server_main(int port, GetInput &input_stream, CommandProcessor &command_processor) {
 	std::vector<std::string> vs;
 	vs.push_back("./server");
-	vs.push_back("--server-ip=127.0.0.1");
 	vs.push_back(std::format("--server-port={}", port));
 	Args args(vs);
 	return server_main(args.get_argc(), args.get_argv(), std::ref(input_stream),
@@ -47,7 +46,6 @@ int run_server_main(int port, GetInput &input_stream, CommandProcessor &command_
 int run_client_main(int port) {
 	std::vector<std::string> vs;
 	vs.push_back("./client");
-	vs.push_back("--server-ip=127.0.0.1");
 	vs.push_back(std::format("--server-port={}", port));
 	Args args(vs);
 	return client_main(args.get_argc(), args.get_argv());
