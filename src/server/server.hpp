@@ -6,6 +6,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "network.hpp"
+
 // to inject dependency
 // DO NOT ABBREVIATE
 class CommandProcessor {
@@ -60,7 +62,7 @@ public:
 	}
 };
 
-void server_input_thread(GetInput& input_stream, CommandProcessor& processor, int server_socket);
+void server_input_thread(GetInput& input_stream, CommandProcessor& processor, socket_t server_socket);
 
 // server main, will be called in tests
 // we actually need more than just (int argc, char* argv[])

@@ -7,24 +7,6 @@
 #include <format>
 #include <future>
 
-bool is_port_available(int port) {
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) {
-		std::cerr << "Error opening socket\n";
-		return false;
-	}
-
-	struct sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	addr.sin_addr.s_addr = INADDR_ANY;
-
-	int result = bind(sockfd, (struct sockaddr *)&addr, sizeof(addr));
-	network_close_socket(sockfd);
-
-	return result == 0;
-}
-
 class Args {
 private:
 	int argc;
@@ -55,6 +37,7 @@ public:
 int run_server_main(int port, GetInput &input_stream, CommandProcessor &command_processor) {
 	std::vector<std::string> vs;
 	vs.push_back("./server");
+	vs.push_back("--server-ip=127.0.0.1");
 	vs.push_back(std::format("--server-port={}", port));
 	Args args(vs);
 	return server_main(args.get_argc(), args.get_argv(), std::ref(input_stream),
@@ -64,6 +47,7 @@ int run_server_main(int port, GetInput &input_stream, CommandProcessor &command_
 int run_client_main(int port) {
 	std::vector<std::string> vs;
 	vs.push_back("./client");
+	vs.push_back("--server-ip=127.0.0.1");
 	vs.push_back(std::format("--server-port={}", port));
 	Args args(vs);
 	return client_main(args.get_argc(), args.get_argv());
@@ -72,14 +56,7 @@ int run_client_main(int port) {
 TEST(ClientServerTest, test_2_client) {
 	FakeInput fake_input;
 	RealCommandProcessor command_processor;
-	int port = -1;
-	for (int i = 12345; i <= 13000; ++i) {
-		if (is_port_available(i)) {
-			port = i;
-			break;
-		}
-	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	int port = 12367;
 	std::future<int> server_return = std::async(std::launch::async, run_server_main, port,
 	                                            std::ref(fake_input), std::ref(command_processor));
 
