@@ -142,12 +142,17 @@ int client_main(int argc, char *argv[]) {
 		// hard to unit test download...
 		if (buffer.starts_with("download ")) {
 			std::string arg = buffer.substr(std::string("download ").length());
-			// doing special packet sending due to big file (may or may not)
-			std::ifstream file(arg, std::ios::binary);
 			int client_socket = o->get_client_socket();
-			if (!file) {
+			// doing special packet sending due to big file (may or may not)
+			if (!std::filesystem::is_regular_file(std::filesystem::path(arg))) {
 				uint64_t size = 0;
 				// doesn't need to swap endian because 0
+				send_exact(client_socket, &size, sizeof(size));
+				continue;
+			}
+			std::ifstream file(arg, std::ios::binary);
+			if (!file) {
+				uint64_t size = 0;
 				send_exact(client_socket, &size, sizeof(size));
 				continue;
 			}
