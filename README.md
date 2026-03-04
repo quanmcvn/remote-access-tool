@@ -46,3 +46,6 @@ Download big file: Client #1 connected and we saw that it conveniently has `bigf
 ![demo 4.2](res/img/demo_rat_4_2.png)
 ![demo 4.3](res/img/demo_rat_4_3.png)
 ![demo 4.4](res/img/demo_rat_4_4.png)
+
+Some error checking: client will return 0 if success, 1 if not, and additionally error as string (if any)
+![demo 5](res/img/demo_rat_5.png)
