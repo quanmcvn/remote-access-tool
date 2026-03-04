@@ -31,7 +31,7 @@ There are also some tests, can be ran by `ctest --test-dir build` after building
 
 ## Demo
 
-Multiple clients and Windows: First we can see that client #1 connected, we say `1:ls` and see that it has Windows filesystem. Then client #2 connected, we do the same and it has a Linux filesystem. We disconnect the client #1, then client #3 connected with the same ip but in different directory in filesystem.
+Multiple clients and Windows: First we can see that client #1 connected, we say `1:ls` and see that it has Windows filesystem. Then client #2 connected, we do the same and it has a Linux filesystem. We disconnect the client #1, then client #3 connected with the same ip as client #1 but in different directory in filesystem.
 ![demo 1](res/img/demo_rat_1.png)
 ![demo 1.2](res/img/demo_rat_1_2.png)
 
