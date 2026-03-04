@@ -228,18 +228,12 @@ std::vector<ProcessListing> get_process_running() {
 			continue;
 		}
 
-		std::ifstream comm_file(entry.path() / "comm");
-		if (!comm_file.is_open()) {
-			continue;
-		}
-
-		std::string process_name;
-		std::getline(comm_file, process_name);
-
+		
 		auto args = read_cmdline(entry.path() / "cmdline");
 		if (args.empty()) {
 			continue; // kernel threads or permission denied
 		}
+		std::string process_name = args[0];
 
 		processes.emplace_back(pid, process_name, args);
 	}
