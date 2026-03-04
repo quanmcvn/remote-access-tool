@@ -35,8 +35,7 @@ Multiple clients and Windows: First we can see that client #1 connected, we say 
 ![demo 1](res/img/demo_rat_1.png)
 ![demo 1.2](res/img/demo_rat_1_2.png)
 
-Client #1 connected and we saw that it has `~/dir1/` and `~/dir2/`. We cd into them and found out that they have `file1` and `file2`, respectively. We then download both file and check its content.
-`ls`, `cd`, `pwd`, `download`:
+`ls`, `cd`, `pwd`, `download`: Client #1 connected and we saw that it has `~/dir1/` and `~/dir2/`. We cd into them and found out that they have `file1` and `file2`, respectively. We then download both file and check its content.
 ![demo 2](res/img/demo_rat_2.png)
 
 Download big file: Client #1 connected and we saw that it conveniently has `bigfile_10MB.bin`, `bigfile_100MB.bin`, `bigfile_1GB.bin`, `bigfile_5GB.bin` for we to test our `download`. We downloaded them and checked with `ls -lh` to see that it's really that big. (They were created with `dd if=/dev/random of=bigfile_X.bin bs=1M count=X`)
