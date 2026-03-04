@@ -23,7 +23,7 @@ private:
 	std::string server_ip;
 	int server_port;
 	socket_t client_socket;
-	sockaddr_in serverAddr;
+	sockaddr_in server_addr;
 
 	void init_non_local() {
 		client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -31,11 +31,11 @@ private:
 			std::cerr << "Socket creation failed\n";
 			exit(1);
 		}
-		serverAddr.sin_family = AF_INET;
-		serverAddr.sin_port = htons(server_port);
-		inet_pton(AF_INET, server_ip.c_str(), &serverAddr.sin_addr);
+		server_addr.sin_family = AF_INET;
+		server_addr.sin_port = htons(server_port);
+		inet_pton(AF_INET, server_ip.c_str(), &server_addr.sin_addr);
 
-		if (connect(client_socket, (sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
+		if (connect(client_socket, (sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
 			std::cerr << "Connection failed\n";
 			exit(1);
 		}

@@ -260,16 +260,16 @@ int server_main(int argc, char *argv[], GetInput& input_stream, CommandProcessor
 	int client_counter = 1;
 
 	while (server_running) {
-		sockaddr_in clientAddr{};
-		socklen_t clientSize = sizeof(clientAddr);
-		socket_t client_socket = accept(server_socket, (sockaddr *)&clientAddr, &clientSize);
+		sockaddr_in client_addr{};
+		socklen_t client_size = sizeof(client_addr);
+		socket_t client_socket = accept(server_socket, (sockaddr *)&client_addr, &client_size);
 		if (!server_running || client_socket < 0) {
 			break;
 		}
 		char client_address_ip[18];
-		inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, client_address_ip, 18);
+		inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_address_ip, 18);
 		std::cout << "client connected!\n";
-		std::cout << client_address_ip << " " << clientAddr.sin_port << "\n";
+		std::cout << client_address_ip << " " << client_addr.sin_port << "\n";
 		ClientSession client;
 		client.id = client_counter++;
 		client.socket = client_socket;
