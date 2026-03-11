@@ -1,0 +1,19 @@
+@startuml container
+
+!include <C4/C4_Container>
+
+Person(admin, "System Administrator", "System Administrator, using RAT System to administrate and control remote systems")
+
+System_Boundary(server_system, "Server Host") {
+	Container(server, "Server", "Process", "A process running on server host, listening for client connections, providing CLI to input and distributing to clients")
+	ContainerDb(server_download, "Downloaded Files", "File system", "Stores files downloaded from client via download")
+}
+System_Boundary(client_system, "Target Client") {
+	Container(client, "Client", "Process", "A process running silently on client, connects to server, receives and processes commands")
+}
+Rel(admin, server, "Input commands through CLI", "TUI (stdin/stdout)")
+Rel(server, server_download, "Stores downloaded file", "File I/O")
+Rel(server, client, "Sends commands, receives results", "TCP Socket (Reverse connection)")
+Rel(client, server, "Receives commands, sends results", "TCP Socket (Reverse connection)")
+
+@enduml

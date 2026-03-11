@@ -1,0 +1,13 @@
+@startuml context
+
+!include <C4/C4_Context>
+
+Person(admin, "System Administrator", "System Administrator, using RAT System to administrate and control remote systems")
+System(server, "Server Host", "Server machine running Linux or Windows, RAT server is installed on this machine")
+System_Ext(client, "Target Client", "Client running Linux or Windows, RAT client is installed on this machine")
+
+Rel(admin, server, "Input commands through CLI", "TUI (stdin/stdout)")
+Rel(server, client, "Sends commands, receives results", "TCP Socket (Reverse connection)")
+Rel(client, server, "Receives commands, sends results", "TCP Socket (Reverse connection)")
+
+@enduml

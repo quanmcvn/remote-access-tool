@@ -1,0 +1,25 @@
+@startuml component_server
+
+!include <C4/C4_Component>
+
+Person(admin, "System Administrator", "System Administrator, using RAT System to administrate and control remote systems")
+
+System_Boundary(server_system, "RAT Server") {
+	Container_Boundary(server, "Server") {
+		Component(server_cli, "Server CLI", "C++ file: server/server.cpp", "REPL reading from stdin. Parse and send to Connection Manager's message queue")
+		Component(server_connection_manager, "Connection Manager", "C++ file: server/server.cpp", "Manages client connection, holds message queue for each client and send to appropiate Client Handler")
+		Component(server_network_listener, "Network Listener", "C++ file: server/server.cpp", "Binds TCP socket, listens and accepts new server connection, spawns new thread for each connection")
+		Component(server_client_handling_thread, "Client Handler", "C++ file: server/server.cpp", "Receives commands from Connection Manager, sends to client, receives results and shows to user")
+		Component(common_serializable, "Serializable Helper", "C++ file: common/serializable.cpp, common/serializable.hpp", "Serialize and deserialize messages")
+	}
+	ContainerDb(server_download, "Downloaded Files", "File system", "Stores files downloaded from client via download")
+}
+
+Rel(admin, server_cli, "Input commands through CLI", "TUI (stdin/stdout)")
+Rel(server_cli, server_connection_manager, "Sends parsed command", "Function call")
+Rel(server_network_listener, server_client_handling_thread, "Spawns new thread", "Thread spawn")
+Rel(server_connection_manager, server_client_handling_thread, "Sends parsed command", "Function call")
+Rel(server_client_handling_thread, common_serializable, "Serialize and deserialize message", "Function call")
+Rel(server_client_handling_thread, server_download, "Stores downloaded file", "File I/O")
+
+@enduml

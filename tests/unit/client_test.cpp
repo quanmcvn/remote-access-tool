@@ -32,10 +32,10 @@ TEST_F(ShellFsTest, ls) {
 		f = (temp_dir / f).string();
 	}
 
-	std::string result = run("ls");
+	std::string result = ClientCommandProcessor::run("ls");
 
 	std::istringstream iss(result, std::ios::binary);
-	std::vector<FileListing> fl = read_vector_serializeable<FileListing>(iss);
+	std::vector<FileListing> fl = SerializableHelper::read_vector_serializeable<FileListing>(iss);
 
 	std::set<std::string> filenames;
 	for (const auto& f : fl) {
@@ -49,14 +49,14 @@ TEST_F(ShellFsTest, ls) {
 TEST_F(ShellFsTest, cd_and_pwd) {
 	std::filesystem::create_directory(temp_dir / "dir1");
 	
-	std::string result_cd = run("cd dir1");
+	std::string result_cd = ClientCommandProcessor::run("cd dir1");
 	std::istringstream iss(result_cd, std::ios::binary);
-	uint32_t ret = read_uint32(iss);
+	uint32_t ret = SerializableHelper::read_uint32(iss);
 	EXPECT_EQ(ret, 0);
 
-	std::string result_pwd = run("pwd");
+	std::string result_pwd = ClientCommandProcessor::run("pwd");
 	iss = std::istringstream(result_pwd, std::ios::binary);
-	std::string path = read_string(iss);
+	std::string path = SerializableHelper::read_string(iss);
 
 	EXPECT_EQ(path, (temp_dir / "dir1").string());
 }
@@ -65,14 +65,14 @@ TEST_F(ShellFsTest, cd_failed_and_pwd) {
 	// no dir1 to cd to
 	// std::filesystem::create_directory(temp_dir / "dir1");
 	
-	std::string result_cd = run("cd dir1");
+	std::string result_cd = ClientCommandProcessor::run("cd dir1");
 	std::istringstream iss(result_cd, std::ios::binary);
-	uint32_t ret = read_uint32(iss);
+	uint32_t ret = SerializableHelper::read_uint32(iss);
 	EXPECT_EQ(ret, 1);
 
-	std::string result_pwd = run("pwd");
+	std::string result_pwd = ClientCommandProcessor::run("pwd");
 	iss = std::istringstream(result_pwd, std::ios::binary);
-	std::string path = read_string(iss);
+	std::string path = SerializableHelper::read_string(iss);
 
 	EXPECT_EQ(path, (temp_dir).string());
 }

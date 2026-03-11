@@ -99,7 +99,7 @@ static std::string wide_to_utf8(const std::wstring &wstr) {
 	return result;
 }
 
-std::vector<ProcessListing> get_process_running() {
+std::vector<ProcessListing> ProcessHelper::get_process_running() {
 	std::vector<ProcessListing> processes;
 	try {
 
@@ -182,7 +182,7 @@ std::vector<ProcessListing> get_process_running() {
 	return processes;
 }
 
-int kill_process(pid_t pid) {
+int ProcessHelper::kill_process(pid_t pid) {
 	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
 	if (hProcess == NULL) {
 		return 1;
@@ -215,7 +215,7 @@ static std::vector<std::string> read_cmdline(const std::filesystem::path &cmdlin
 	return args;
 }
 
-std::vector<ProcessListing> get_process_running() {
+std::vector<ProcessListing> ProcessHelper::get_process_running() {
 	// we read /proc
 	std::vector<ProcessListing> processes;
 	for (const auto &entry : std::filesystem::directory_iterator("/proc")) {
@@ -240,7 +240,7 @@ std::vector<ProcessListing> get_process_running() {
 	return processes;
 }
 
-int kill_process(pid_t pid) {
+int ProcessHelper::kill_process(pid_t pid) {
 	if (kill(pid, SIGTERM) == 0) {
 		return 0;
 	} else {
