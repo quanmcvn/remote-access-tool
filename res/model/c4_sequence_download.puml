@@ -24,10 +24,17 @@ Rel(server_client_handling_thread, common_serializable, "Serializes message and 
 Rel(common_serializable, client_outside, "Receives and deserializes message")
 Rel(client_outside, client_while, "Sends command to client")
 Rel(client_while, client_while, "Checks file exists, is regular file, and readable")
-Rel(client_while, server_client_handling_thread, "Sends 8 bytes as file size")
-Rel(client_while, client_while, "Loops, sends 8192-byte chunk until the whole file is streamed")
-Rel(client_while, server_client_handling_thread, "Sends ok")
-Rel(server_client_handling_thread, admin, "Shows 'download completed' to user")
+alt file doesn't exist or is not regular file or not readable
+Rel(client_while, server_client_handling_thread, "Sends 0 (8 bytes) signifying error")
+Rel(client_while, server_client_handling_thread, "Sends error code")
+else check succeeded
+	Rel(client_while, server_client_handling_thread, "Sends 8 bytes as file size")
+	loop
+		Rel(client_while, server_client_handling_thread, "Sends 8192-byte chunk until the whole file is streamed")
+	end
+	Rel(client_while, server_client_handling_thread, "Sends 'ok'")
+end
+Rel(server_client_handling_thread, admin, "Shows 'download completed' or error code to user")
 
 
 SHOW_LEGEND()

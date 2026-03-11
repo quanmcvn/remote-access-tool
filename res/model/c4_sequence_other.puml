@@ -1,4 +1,4 @@
-@startuml sequence_kill
+@startuml sequence_other_command
 
 !include <C4/C4_Sequence>
 
@@ -18,16 +18,30 @@ Container_Boundary(client, "Client")
 	Component(client_process, "Process Helper", "C++ file: client/process.cpp", "Uses OS-native API to get processes running and kills process (not using system())")
 Boundary_End()
 
-Rel(admin, server_cli, "Input command through CLI, e.g. kill 12345")
+Rel(admin, server_cli, "Input command through CLI, e.g. ls, pwd, cd dir1, ps, kill 12345")
 Rel(server_cli, server_connection_manager, "Sends command to queue")
 Rel(server_connection_manager, server_client_handling_thread, "Sends command from queue")
 Rel(server_client_handling_thread, common_serializable, "Serializes message and sends")
 Rel(common_serializable, client_outside, "Receives and deserializes message")
 Rel(client_outside, client_while, "Sends command to client")
-Rel(client_while, client_process, "Deletgate to ProcessHelper")
-Rel(client_process, client_process, "Tries to kill process, returns 0 if success, 1 if error, with addtional error code")
-Rel(client_process, server_client_handling_thread, "Sends results")
-Rel(server_client_handling_thread, admin, "Shows 'kill success' or 'kill failed' to user")
+alt if the command is ps or kill
+	Rel(client_while, client_process, "Deletgate to ProcessHelper")
+	alt if the command is ps
+		Rel(client_process, client_process, "Lists processes running")
+	else the command is kill
+		Rel(client_process, client_process, "Tries to kill process, returns 0 if success, 1 if error, with addtional error code")
+	end
+	Rel(client_process, client_while, "Sends results back to processor")
+else the command is ls
+	Rel(client_while, client_while, "Lists file in current directory")
+else the command is pwd
+	Rel(client_while, client_while, "Gets current directory")
+else the command is cd
+	Rel(client_while, client_while, "Changes current directory")
+end
+
+Rel(client_while, server_client_handling_thread, "Returns result to server")
+Rel(server_client_handling_thread, admin, "Shows result to user")
 
 
 SHOW_LEGEND()
