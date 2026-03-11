@@ -31,7 +31,7 @@ TEST(ServerTest, server_input_thread) {
 
 	std::thread t([&]() {
 		// close socket -1, unfortunately I don't have better way rn
-		server_input_thread(std::ref(fake_input), std::ref(command_processor), -1);
+		ServerCLI::server_input_thread(std::ref(fake_input), std::ref(command_processor), -1);
 	});
 
 	t.join();

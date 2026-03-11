@@ -1,10 +1,10 @@
-@startuml context
+@startuml component_server
 
 !include <C4/C4_Component>
 
 Person(admin, "System Administrator", "System Administrator, using RAT System to administrate and control remote systems")
 
-System_Boundary(server_system, "Server Host") {
+System_Boundary(server_system, "RAT Server") {
 	Container_Boundary(server, "Server") {
 		Component(server_cli, "Server CLI", "C++ file: server/server.cpp", "REPL reading from stdin. Parse and send to Connection Manager's message queue")
 		Component(server_connection_manager, "Connection Manager", "C++ file: server/server.cpp", "Manages client connection, holds message queue for each client and send to appropiate Client Handler")

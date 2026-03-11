@@ -1,4 +1,4 @@
-@startuml context
+@startuml container
 
 !include <C4/C4_Container>
 

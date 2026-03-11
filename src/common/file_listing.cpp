@@ -14,13 +14,13 @@ FileListing::FileListing(const std::filesystem::directory_entry& path) : file_pa
 FileListing::~FileListing() {}
 
 void FileListing::serialize(std::ostream& os) const {
-	write_string(os, file_path);
-	write_uint32(os, static_cast<std::uint32_t>(file_flag));
+	SerializableHelper::write_string(os, file_path);
+	SerializableHelper::write_uint32(os, static_cast<std::uint32_t>(file_flag));
 }
 
 void FileListing::deserialize(std::istream& is) {
-	file_path = read_string(is);
-	file_flag = read_uint32(is);
+	file_path = SerializableHelper::read_string(is);
+	file_flag = SerializableHelper::read_uint32(is);
 }
 
 std::string FileListing::get_file_path() const {

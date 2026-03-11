@@ -47,46 +47,95 @@ public:
 	    : server_ip(n_server_ip), server_port(n_server_port) {
 		init_non_local();
 	}
-	std::string get_input() const { return recv_message(client_socket); }
-	void send_output(const std::string &message) const { send_message(client_socket, message); }
+	std::string get_input() const { return SerializableHelper::recv_message(client_socket); }
+	void send_output(const std::string &message) const { SerializableHelper::send_message(client_socket, message); }
 	int get_client_socket() const { return client_socket; }
 	~Outside() { network_close_socket(client_socket); }
 };
 
+std::unique_ptr<Outside> o;
+
 } // namespace
 
-std::string run(const std::string &command) {
+std::vector<FileListing> ClientCommandProcessor::get_files_in_directory() {
+	std::vector<FileListing> fl;
+	for (const auto &entry : std::filesystem::directory_iterator(std::filesystem::current_path())) {
+		fl.emplace_back(entry);
+	}
+	return fl;
+}
+
+int ClientCommandProcessor::change_directory(const std::string &filepath) {
+	try {
+		std::filesystem::current_path(filepath);
+		return 0;
+	} catch (const std::filesystem::filesystem_error &e) {
+		return 1;
+	}
+}
+std::string ClientCommandProcessor::get_pwd() { return std::filesystem::current_path().string(); }
+std::string ClientCommandProcessor::download_file(const std::string &filepath) {
+	int client_socket = o->get_client_socket();
+	// doing special packet sending due to big file (may or may not)
+	if (!std::filesystem::is_regular_file(std::filesystem::path(filepath))) {
+		uint64_t size = 0;
+		// doesn't need to swap endian because 0
+		SerializableHelper::send_exact(client_socket, &size, sizeof(size));
+		return std::format("{} does not exist or is not regular file!", filepath.c_str());
+	}
+	std::ifstream file(filepath, std::ios::binary);
+	if (!file) {
+		uint64_t size = 0;
+		SerializableHelper::send_exact(client_socket, &size, sizeof(size));
+		return std::format("can't open {}!", filepath.c_str());
+	}
+
+	uint64_t file_size = std::filesystem::file_size(std::filesystem::path(filepath));
+	if (file_size == 0) {
+		SerializableHelper::send_exact(client_socket, &file_size, sizeof(file_size));
+		return std::format("file {} size is 0!", filepath.c_str());
+	}
+
+	uint64_t net_file_size = SerializableHelper::swap_endian(file_size);
+	SerializableHelper::send_exact(client_socket, &net_file_size, sizeof(net_file_size));
+
+	const uint64_t BUFFER_SIZE = 8192;
+	char buffer[BUFFER_SIZE];
+
+	while (file) {
+		file.read(buffer, BUFFER_SIZE);
+		std::streamsize bytes_read = file.gcount();
+		if (bytes_read > 0) {
+			SerializableHelper::send_exact(client_socket, buffer, bytes_read);
+		}
+	}
+	return "ok";
+}
+
+std::string ClientCommandProcessor::run(const std::string &command) {
 	if (command == "ls") {
 		std::ostringstream oss(std::ios::binary);
-		std::vector<FileListing> fl;
-		for (const auto &entry :
-		     std::filesystem::directory_iterator(std::filesystem::current_path())) {
-			fl.emplace_back(entry);
-		}
-		write_vector_serializeable(oss, fl);
+		std::vector<FileListing> fl = ClientCommandProcessor::get_files_in_directory();
+		SerializableHelper::write_vector_serializeable(oss, fl);
 		return oss.str();
 	}
 	if (command.starts_with("cd ")) {
 		std::string arg = command.substr(std::string("cd ").length());
 		std::ostringstream oss(std::ios::binary);
-		try {
-			std::filesystem::current_path(arg);
-			write_uint32(oss, 0);
-		} catch (const std::filesystem::filesystem_error &e) {
-			write_uint32(oss, 1);
-		}
+		int ret = ClientCommandProcessor::change_directory(arg);
+		SerializableHelper::write_uint32(oss, static_cast<uint32_t>(ret));
 		return oss.str();
 	}
 	if (command == "pwd") {
-		std::string arg = command.substr(std::string("cd ").length());
+		std::string arg = command.substr(std::string("pwd").length());
 		std::ostringstream oss(std::ios::binary);
-		write_string(oss, std::filesystem::current_path().string());
+		SerializableHelper::write_string(oss, ClientCommandProcessor::get_pwd());
 		return oss.str();
 	}
 	if (command == "ps") {
-		std::vector<ProcessListing> processes = get_process_running();
+		std::vector<ProcessListing> processes = ProcessHelper::get_process_running();
 		std::ostringstream oss(std::ios::binary);
-		write_vector_serializeable(oss, processes);
+		SerializableHelper::write_vector_serializeable(oss, processes);
 		return oss.str();
 	}
 	if (command.starts_with("kill ")) {
@@ -94,19 +143,27 @@ std::string run(const std::string &command) {
 		std::ostringstream oss(std::ios::binary);
 		int pid = str_to_int(arg);
 		if (pid <= 0) {
-			write_uint32(oss, 1u);
-			write_string(oss, std::format("can't parse pid {} to int or invalid", pid));
+			SerializableHelper::write_uint32(oss, 1u);
+			SerializableHelper::write_string(oss, std::format("can't parse pid {} to int or invalid", pid));
 		} else {
-			int return_code = kill_process(pid);
-			write_uint32(oss, return_code);
+			int return_code = ProcessHelper::kill_process(pid);
+			SerializableHelper::write_uint32(oss, return_code);
 			if (return_code == 0) {
-				write_string(oss, "ok");
+				SerializableHelper::write_string(oss, "ok");
 			} else {
-				write_string(oss, std::format("kill: {}", get_last_error_string(get_last_error())));
+				SerializableHelper::write_string(oss, std::format("kill: {}", get_last_error_string(get_last_error())));
 			}
 		}
 		return oss.str();
 	}
+	if (command.starts_with("download ")) {
+		std::string arg = command.substr(std::string("download ").length());
+		std::ostringstream oss(std::ios::binary);
+		std::string return_string = ClientCommandProcessor::download_file(arg);
+		SerializableHelper::write_string(oss, return_string);
+		return oss.str();
+	}
+
 	return std::format("{}: not recognized", command.c_str());
 }
 
@@ -131,7 +188,7 @@ int client_main(int argc, char *argv[]) {
 		}
 	}
 	std::cout << "chosing " << chosen_ip << ":" << chosen_port << "\n";
-	std::unique_ptr<Outside> o = std::make_unique<Outside>(chosen_ip, chosen_port);
+	o = std::make_unique<Outside>(chosen_ip, chosen_port);
 
 	while (true) {
 		std::string buffer = o->get_input();
@@ -139,46 +196,7 @@ int client_main(int argc, char *argv[]) {
 		if (buffer == "exit") {
 			break;
 		}
-		// hard to unit test download...
-		if (buffer.starts_with("download ")) {
-			std::string arg = buffer.substr(std::string("download ").length());
-			int client_socket = o->get_client_socket();
-			// doing special packet sending due to big file (may or may not)
-			if (!std::filesystem::is_regular_file(std::filesystem::path(arg))) {
-				uint64_t size = 0;
-				// doesn't need to swap endian because 0
-				send_exact(client_socket, &size, sizeof(size));
-				continue;
-			}
-			std::ifstream file(arg, std::ios::binary);
-			if (!file) {
-				uint64_t size = 0;
-				send_exact(client_socket, &size, sizeof(size));
-				continue;
-			}
-
-			uint64_t file_size = std::filesystem::file_size(std::filesystem::path(arg));
-			if (file_size == 0) {
-				send_exact(client_socket, &file_size, sizeof(file_size));
-				continue;
-			}
-
-			uint64_t net_file_size = swap_endian(file_size);
-			send_exact(client_socket, &net_file_size, sizeof(net_file_size));
-
-			const uint64_t BUFFER_SIZE = 8192;
-			char buffer[BUFFER_SIZE];
-
-			while (file) {
-				file.read(buffer, BUFFER_SIZE);
-				std::streamsize bytes_read = file.gcount();
-				if (bytes_read > 0) {
-					send_exact(client_socket, buffer, bytes_read);
-				}
-			}
-			continue;
-		}
-		std::string message = run(buffer);
+		std::string message = ClientCommandProcessor::run(buffer);
 		o->send_output(message);
 	}
 	return 0;

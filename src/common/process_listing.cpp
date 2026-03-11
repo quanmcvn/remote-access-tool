@@ -13,15 +13,15 @@ args(n_args) {
 ProcessListing::~ProcessListing() {}
 
 void ProcessListing::serialize(std::ostream &os) const {
-	write_uint32(os, this->pid);
-	write_string(os, this->proc_name);
-	write_vector_string(os, this->args);
+	SerializableHelper::write_uint32(os, this->pid);
+	SerializableHelper::write_string(os, this->proc_name);
+	SerializableHelper::write_vector_string(os, this->args);
 }
 
 void ProcessListing::deserialize(std::istream &is) {
-	this->pid = read_uint32(is);
-	this->proc_name = read_string(is);
-	this->args = read_vector_string(is);
+	this->pid = SerializableHelper::read_uint32(is);
+	this->proc_name = SerializableHelper::read_string(is);
+	this->args = SerializableHelper::read_vector_string(is);
 }
 
 uint32_t ProcessListing::get_pid() const { return pid; }

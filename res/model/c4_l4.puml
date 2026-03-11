@@ -1,0 +1,113 @@
+@startuml code
+
+skin rose
+
+skinparam classAttributeIconSize 0
+
+class Outside {
+	-server_ip: string
+	-server_port: int
+	-client_socket: socket_t
+	-server_addr: sockaddr_in
+	-init_non_local(): void
+	+get_input(): string
+	+send_output(const std::string& message): void
+	+get_client_socket(): int
+}
+
+class ClientCommandProcessor {
+	{static} -get_files_in_directory(): std::vector<FileListing>
+	{static} -change_directory(const std::string& filepath): int
+	{static} -get_pwd(): string
+	{static} -download_file(const std::string& filepath): string
+	{static} +run(const std::string& command): string
+}
+
+class ProcessHelper {
+	{static} +get_process_running(): std::vector<ProcessListing>
+	{static} +kill_process(pid: pid_t): int
+}
+
+class ProcessListing {
+	-pid: uint32_t
+	-proc_name: string
+	-args: std::vector<std::string>
+	+get_pid(): uint32_t
+	+get_proc_name(): string
+	+get_args(): std::vector<std::strring>
+}
+
+class FileListing {
+	-file_path: string
+	-file_flag: uint32_t
+	+get_file_path(): string
+	+get_file_flag(): uint32_t
+	+is_regular_file(): bool
+	+is_directory(): bool
+}
+
+class SerializableHelper {
+	{static} +swap_endian(uint32_t value): uint32_t
+	{static} +swap_endian(int32_t value): int32_t
+	{static} +swap_endian(uint64_t value): uint64_t
+	{static} +write_uint32(std::ostream &os, uint32_t value): void
+	{static} +read_uint32(std::istream &is):uint32_t
+	{static} +write_string(std::ostream &os, const std::string &str): void
+	{static} +read_string(std::istream &is): std::string
+	{static} +write_vector_string(std::ostream &os, const std::vector<std::string> &vec): void
+	{static} +read_vector_string(std::istream &is): std::vector<std::string>
+	{static} +template <typename T> void write_vector_serializeable(std::ostream &os, const std::vector<T> &vec)
+	{static} +template <typename T> std::vector<T> read_vector_serializeable(std::istream &is)
+	{static} +send_exact(socket_t socket_fd, const void *data, size_t size): void
+	{static} +recv_exact(socket_t socket_fd, const void *data, size_t size): void
+	{static} +send_message(socket_t socket_fd, const std::string &payload): void
+	{static} +recv_message(socket_t socket_fd): std::string
+}
+
+class ClientSession {
+	+socket: socket_t
+	+id: int
+	+message_queue: std::queue<std::string>
+}
+
+class ConnectionManager {
+	-client_mutex: std::mutex
+	-clients: std::map<int, ClientSession> 
+	+exit_all(): void
+	+is_no_client(): bool
+	+remove_client(int client_id): void
+	+add_new_client(ClientSession client_session): void
+	+send_to_queue(const std::string &command): int
+	+get_message_from_queue(int client_id): std::string
+}
+
+class ServerCLI {
+	{static} +server_input_thread(socket_t server_socket): void
+}
+
+class ClientHandler {
+	{static} +handle_client(socket_t client_socket, int client_id): void
+}
+
+class NetworkListener {
+	{static} +listen_for_cliemt(socket_t server_socket): void
+}
+
+NetworkListener ..> "spawns new thread" ClientHandler
+
+ClientHandler --> "gets message" ConnectionManager
+ServerCLI --> "sends message" ConnectionManager
+
+ClientHandler --> "uses" SerializableHelper
+
+ClientCommandProcessor --> "uses" ProcessHelper
+ClientCommandProcessor --> "receives and sends message" Outside
+ClientCommandProcessor --> FileListing
+ProcessHelper --> ProcessListing
+
+Outside --> "uses" SerializableHelper
+
+ConnectionManager --> ClientSession
+
+
+@enduml
