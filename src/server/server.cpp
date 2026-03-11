@@ -267,7 +267,7 @@ public:
 			std::cout << "client connected!\n";
 			std::cout << client_address_ip << " " << client_addr.sin_port << "\n";
 			ClientSession client;
-			client.id = client_counter++;
+			client.id = ++client_counter;
 			client.socket = client_socket;
 			std::cout << "this will be client #" << client.id << "\n";
 			connection_manager.add_new_client(std::move(client));
@@ -328,8 +328,6 @@ int server_main(int argc, char *argv[], GetInput &input_stream,
 
 	std::thread input_thread(ServerCLI::server_input_thread, std::ref(input_stream),
 	                         std::ref(command_processor), server_socket);
-
-	int client_counter = 1;
 
 	NetworkListener::listen_for_client(server_socket);
 
